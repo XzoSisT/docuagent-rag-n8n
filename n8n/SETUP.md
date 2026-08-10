@@ -74,7 +74,7 @@ Add these body fields:
 | Name | Value |
 | --- | --- |
 | `query` | `{{ $json.chatInput }}` |
-| `top_k` | `4` |
+| `top_k` | `2` |
 
 If n8n runs outside this Compose project, use the matching URL:
 
@@ -91,6 +91,16 @@ Connect **Search Knowledge Base** to **Basic LLM Chain**. Set the prompt source 
 ### 4. Chat model
 
 Attach **OpenAI Chat Model** to the Basic LLM Chain's model connector. Select the local Ollama credential and `mistral:latest`.
+
+Use these model settings so a large local prompt cannot run indefinitely:
+
+| Setting | Value |
+| --- | --- |
+| Use Responses API | disabled |
+| Maximum Number of Tokens | `300` |
+| Sampling Temperature | `0.1` |
+| Timeout | `120000` ms |
+| Max Retries | `0` |
 
 ## Verification
 
@@ -139,6 +149,13 @@ And Thai retrieval:
 - Confirm the Ollama desktop application is running.
 - Confirm the credential Base URL is `http://host.docker.internal:11434/v1`.
 - Confirm `mistral:latest` is installed locally.
+
+### Ollama keeps executing for several minutes
+
+- Stop the current execution before changing the node settings.
+- Confirm Search Knowledge Base uses `top_k: 2`.
+- Re-copy `prompts/rag_answer_prompt.txt`; it limits each retrieved chunk and the answer length.
+- Apply the Chat model limits above. On a 6 GB laptop GPU, long Thai context can otherwise saturate the GPU for several minutes.
 
 ### The answer invents a citation
 

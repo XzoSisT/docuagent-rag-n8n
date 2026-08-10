@@ -29,7 +29,7 @@
               },
               {
                 "name": "top_k",
-                "value": "4"
+                "value": "2"
               }
             ]
           },
@@ -53,7 +53,7 @@
       {
         "parameters": {
           "promptType": "define",
-          "text": "=You are DocuAgent, an AI knowledge assistant.\n\nAnswer the user's question using ONLY the retrieved document context below.\n\nUser question:\n{{ $json.query }}\n\nRetrieved document context:\n{{ $json.results.map((result, index) =>\n`[${index + 1}]\nSource: ${result.source}\nPage: ${result.page}\nRelevance score: ${result.score}\nContent:\n${result.text}`\n).join('\\n\\n') }}\n\nInstructions:\n- Use only information found in the retrieved context.\n- Include source filenames and page numbers.\n- Do not invent information, filenames, URLs, or page numbers.\n- If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.\n- Answer in the same language as the user's question.",
+          "text": "=You are DocuAgent, an AI knowledge assistant.\n\nAnswer the user's question using ONLY the retrieved document context below.\n\nUser question:\n{{ $json.query }}\n\nRetrieved document context:\n{{ $json.results.map((result, index) =>\n`[${index + 1}]\nSource: ${result.source}\nPage: ${result.page}\nContent:\n${result.text.slice(0, 900)}`\n).join('\\n\\n') }}\n\nInstructions:\n- Use only information found in the retrieved context.\n- Include source filenames and page numbers.\n- Do not invent information, filenames, URLs, or page numbers.\n- If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.\n- Answer in the same language as the user's question.\n- Keep the answer concise: no more than 5 bullet points or 250 words.",
           "batching": {}
         },
         "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -73,8 +73,14 @@
             "mode": "list",
             "cachedResultName": "mistral:latest"
           },
-          "builtInTools": {},
-          "options": {}
+        "builtInTools": {},
+        "responsesApiEnabled": false,
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.1,
+          "timeout": 120000,
+          "maxRetries": 0
+        }
         },
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
         "typeVersion": 1.3,

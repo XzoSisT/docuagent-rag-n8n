@@ -10,9 +10,8 @@ Retrieved document context:
 `[${index + 1}]
 Source: ${result.source}
 Page: ${result.page}
-Relevance score: ${result.score}
 Content:
-${result.text}`
+${result.text.slice(0, 900)}`
 ).join('\n\n') }}
 
 Instructions:
@@ -21,3 +20,4 @@ Instructions:
 - Do not invent information, filenames, URLs, or page numbers.
 - If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.
 - Answer in the same language as the user's question.
+- Keep the answer concise: no more than 5 bullet points or 250 words.
