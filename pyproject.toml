@@ -1,0 +1,27 @@
+[project]
+name = "docuagent-rag-n8n"
+version = "0.1.0"
+description = "Document retrieval backend for the DocuAgent n8n workflow."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "openai>=1.58,<3",
+    "pydantic-settings>=2.7,<3.0",
+    "pypdf>=5,<7",
+    "python-multipart>=0.0.18,<1",
+    "qdrant-client>=1.12,<2",
+    "uvicorn[standard]>=0.34,<1.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2,<3",
+    "pytest>=8,<10",
+]

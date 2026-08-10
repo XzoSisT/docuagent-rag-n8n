@@ -1,0 +1,130 @@
+[
+  {
+    "id": "DCRagV1x8mN2pQ7s",
+    "name": "DocuAgent - Deterministic RAG",
+    "nodes": [
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "typeVersion": 1.4,
+        "position": [
+          0,
+          0
+        ],
+        "id": "45d28573-2193-4503-b0bd-85795dc324ed",
+        "name": "When chat message received"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://api:8000/search",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "query",
+                "value": "={{ $json.chatInput }}"
+              },
+              {
+                "name": "top_k",
+                "value": "4"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          240,
+          0
+        ],
+        "id": "8e650a8e-4a5f-42fd-a685-a5c79ae82544",
+        "name": "Search Knowledge Base"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=You are DocuAgent, an AI knowledge assistant.\n\nAnswer the user's question using ONLY the retrieved document context below.\n\nUser question:\n{{ $json.query }}\n\nRetrieved document context:\n{{ $json.results.map((result, index) =>\n`[${index + 1}]\nSource: ${result.source}\nPage: ${result.page}\nRelevance score: ${result.score}\nContent:\n${result.text}`\n).join('\\n\\n') }}\n\nInstructions:\n- Use only information found in the retrieved context.\n- Include source filenames and page numbers.\n- Do not invent information, filenames, URLs, or page numbers.\n- If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.\n- Answer in the same language as the user's question.",
+          "batching": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.9,
+        "position": [
+          480,
+          0
+        ],
+        "id": "0ec72a5c-cec6-45cc-a1da-8c170904d28a",
+        "name": "Answer From Retrieved Context"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "mistral:latest",
+            "mode": "list",
+            "cachedResultName": "mistral:latest"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          480,
+          240
+        ],
+        "id": "5a339668-f5cc-441b-bdde-5d6b4ce2d4e7",
+        "name": "Local Ollama Chat Model"
+      }
+    ],
+    "connections": {
+      "When chat message received": {
+        "main": [
+          [
+            {
+              "node": "Search Knowledge Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Search Knowledge Base": {
+        "main": [
+          [
+            {
+              "node": "Answer From Retrieved Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Local Ollama Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Answer From Retrieved Context",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "active": false,
+    "tags": []
+  }
+]
