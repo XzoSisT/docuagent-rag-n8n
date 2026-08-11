@@ -1,0 +1,38 @@
+[
+  {
+    "id": "nist-core-functions",
+    "query": "What are the four core functions of the NIST AI RMF?",
+    "expected_answerable": true,
+    "expected_source": "nist-ai-rmf-1.0.pdf"
+  },
+  {
+    "id": "rag-sequence-vs-token",
+    "query": "How do RAG-Sequence and RAG-Token differ?",
+    "expected_answerable": true,
+    "expected_source": "rag-original-paper.pdf"
+  },
+  {
+    "id": "etda-governance-thai",
+    "query": "องค์กรควรจัดโครงสร้างการบริหารภายในเพื่อกำกับดูแล AI อย่างไร?",
+    "expected_answerable": true,
+    "expected_source": "etda-ai-governance-business-th.pdf"
+  },
+  {
+    "id": "etda-human-oversight-thai",
+    "query": "Human-in-the-loop และ human-over-the-loop แตกต่างกันอย่างไรในการกำกับดูแล AI?",
+    "expected_answerable": true,
+    "expected_source": "etda-ai-governance-business-th.pdf"
+  },
+  {
+    "id": "out-of-scope-revenue",
+    "query": "According to the uploaded documents, what was OpenAI's total revenue in 2025?",
+    "expected_answerable": false,
+    "expected_reason": "no_relevant_context"
+  },
+  {
+    "id": "missing-explicit-document",
+    "query": "What does employee-handbook.pdf say about remote working?",
+    "expected_answerable": false,
+    "expected_reason": "requested_source_not_found_or_irrelevant"
+  }
+]

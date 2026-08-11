@@ -17,7 +17,13 @@ Chat Trigger
 HTTP Request: Search Knowledge Base
      |
      v
-Basic LLM Chain ----- Local Ollama Chat Model
+IF: Relevant Context Found?
+     | yes                         | no
+     v                             v
+Basic LLM Chain              Reject Without Context
+     |
+     v
+Append Verified Citations
 ```
 
 ## Prerequisites
@@ -84,11 +90,15 @@ If n8n runs outside this Compose project, use the matching URL:
 | Directly on the host | `http://localhost:8000/search` |
 | Separate Docker container | `http://host.docker.internal:8000/search` |
 
-### 3. Basic LLM Chain
+### 3. Relevance branch
+
+Add an **IF** node that checks `{{ $json.answerable }}` is true. Connect the true output to the Basic LLM Chain and the false output to **Reject Without Context**. The rejection node returns a fixed message and must not connect to a model.
+
+### 4. Basic LLM Chain
 
 Connect **Search Knowledge Base** to **Basic LLM Chain**. Set the prompt source to **Define below**, then paste the complete contents of `prompts/rag_answer_prompt.txt`.
 
-### 4. Chat model
+### 5. Chat model
 
 Attach **OpenAI Chat Model** to the Basic LLM Chain's model connector. Select the local Ollama credential and `mistral:latest`.
 
@@ -97,10 +107,14 @@ Use these model settings so a large local prompt cannot run indefinitely:
 | Setting | Value |
 | --- | --- |
 | Use Responses API | disabled |
-| Maximum Number of Tokens | `300` |
+| Maximum Number of Tokens | `400` |
 | Sampling Temperature | `0.1` |
 | Timeout | `120000` ms |
 | Max Retries | `0` |
+
+### 6. Verified citations
+
+Connect the Basic LLM Chain to **Append Verified Citations**. This node reads `source` and `page` from Search Knowledge Base and appends them after the generated answer. The model prompt intentionally does not generate its own citation strings.
 
 ## Verification
 
@@ -115,8 +129,12 @@ A successful execution must show:
 1. Chat Trigger ran.
 2. Search Knowledge Base called `/search`.
 3. Its response includes `nist-ai-rmf-1.0.pdf`, page numbers, and scores.
-4. Basic LLM Chain ran after retrieval.
-5. The answer states `GOVERN`, `MAP`, `MEASURE`, and `MANAGE` and cites the retrieved file and pages.
+4. Relevant Context Found? selected the true branch.
+5. Basic LLM Chain ran after retrieval.
+6. Append Verified Citations added the retrieved filename and page.
+7. The answer states `GOVERN`, `MAP`, `MEASURE`, and `MANAGE`.
+
+For a negative-path test, ask about `employee-handbook.pdf`. The false branch must run and Local Ollama Chat Model must not run.
 
 Also test retrieval from the RAG paper:
 

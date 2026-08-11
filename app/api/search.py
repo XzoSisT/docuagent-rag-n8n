@@ -12,7 +12,7 @@ from app.services.embedding_service import (
     EmbeddingServiceError,
     create_embedding_service,
 )
-from app.services.rag_service import RetrievalService
+from app.services.rag_service import RetrievalService, extract_requested_pdf
 from app.services.vector_store import QdrantVectorStore, VectorStoreError
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ def get_retrieval_service() -> RetrievalService:
         embedding_service=embedding_service,
         vector_store=vector_store,
         default_top_k=settings.top_k,
+        min_relevance_score=settings.min_relevance_score,
     )
 
 
@@ -66,4 +67,18 @@ def search_documents(
             detail=str(exc),
         ) from exc
 
-    return SearchResponse(query=request.query, results=results)
+    requested_source = extract_requested_pdf(request.query)
+    if results:
+        reason = "context_found"
+    elif requested_source:
+        reason = "requested_source_not_found_or_irrelevant"
+    else:
+        reason = "no_relevant_context"
+
+    return SearchResponse(
+        query=request.query,
+        answerable=bool(results),
+        reason=reason,
+        requested_source=requested_source,
+        results=results,
+    )

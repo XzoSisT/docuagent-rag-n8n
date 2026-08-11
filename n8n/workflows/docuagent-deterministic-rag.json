@@ -52,14 +52,48 @@
       },
       {
         "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "98012489-fae8-4e5d-a60f-ef4d495292f4",
+                "leftValue": "={{ $json.answerable }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          480,
+          0
+        ],
+        "id": "808f835f-184b-481a-a7a2-c0057539e766",
+        "name": "Relevant Context Found?"
+      },
+      {
+        "parameters": {
           "promptType": "define",
-          "text": "=You are DocuAgent, an AI knowledge assistant.\n\nAnswer the user's question using ONLY the retrieved document context below.\n\nUser question:\n{{ $json.query }}\n\nRetrieved document context:\n{{ $json.results.map((result, index) =>\n`[${index + 1}]\nSource: ${result.source}\nPage: ${result.page}\nContent:\n${result.text.slice(0, 900)}`\n).join('\\n\\n') }}\n\nInstructions:\n- Use only information found in the retrieved context.\n- Include source filenames and page numbers.\n- Do not invent information, filenames, URLs, or page numbers.\n- If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.\n- Answer in the same language as the user's question.\n- Keep the answer concise: no more than 5 bullet points or 250 words.",
+          "text": "=You are DocuAgent, an AI knowledge assistant.\n\nAnswer the user's question using ONLY the retrieved document context below.\n\nUser question:\n{{ $json.query }}\n\nRequired response language:\n{{ /[ก-๙]/.test($json.query) ? 'Thai' : 'English' }}\n\nRetrieved document context:\n{{ $json.results.map((result, index) =>\n`[${index + 1}]\nContent:\n${result.text.slice(0, 900)}`\n).join('\\n\\n') }}\n\nInstructions:\n- Use only information explicitly supported by the retrieved context.\n- Answer in the required response language shown above.\n- Do not infer policies, facts, filenames, URLs, or page numbers.\n- Do not write a Sources or References section; the workflow appends verified citations.\n- Start directly with the answer.\n- Keep the answer concise: at most 3 bullet points or 180 words.",
           "batching": {}
         },
         "type": "@n8n/n8n-nodes-langchain.chainLlm",
         "typeVersion": 1.9,
         "position": [
-          480,
+          720,
           0
         ],
         "id": "0ec72a5c-cec6-45cc-a1da-8c170904d28a",
@@ -73,23 +107,69 @@
             "mode": "list",
             "cachedResultName": "mistral:latest"
           },
-        "builtInTools": {},
-        "responsesApiEnabled": false,
-        "options": {
-          "maxTokens": 300,
-          "temperature": 0.1,
-          "timeout": 120000,
-          "maxRetries": 0
-        }
+          "builtInTools": {},
+          "responsesApiEnabled": false,
+          "options": {
+            "maxTokens": 400,
+            "temperature": 0.1,
+            "timeout": 120000,
+            "maxRetries": 0
+          }
         },
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
         "typeVersion": 1.3,
         "position": [
-          480,
+          720,
           240
         ],
         "id": "5a339668-f5cc-441b-bdde-5d6b4ce2d4e7",
         "name": "Local Ollama Chat Model"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "ec9882e4-c7be-409c-8606-197b74ed2004",
+                "name": "text",
+                "value": "={{ $json.text.trim() + '\\n\\n' + (/[ก-๙]/.test($('Search Knowledge Base').item.json.query) ? 'แหล่งอ้างอิงที่ตรวจสอบแล้ว:' : 'Verified sources:') + '\\n' + Array.from(new Set($('Search Knowledge Base').item.json.results.map(result => `- ${result.source}, page ${result.page}`))).join('\\n') }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          960,
+          0
+        ],
+        "id": "f5b5fc2b-78d7-48b9-b98b-a852d97bcbe8",
+        "name": "Append Verified Citations"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "f8946e9d-62d0-4db4-bcc3-cb2b8e379cb3",
+                "name": "text",
+                "value": "={{ /[ก-๙]/.test($json.query) ? ($json.requested_source ? `ไม่พบข้อมูลที่เกี่ยวข้องจากไฟล์ ${$json.requested_source} ในเอกสารที่จัดทำดัชนีไว้` : 'ไม่พบข้อมูลที่เกี่ยวข้องเพียงพอในเอกสารที่จัดทำดัชนีไว้') : ($json.requested_source ? `No relevant information was found for ${$json.requested_source} in the indexed documents.` : 'No sufficiently relevant information was found in the indexed documents.') }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          720,
+          -160
+        ],
+        "id": "cd3ddd68-326e-4b09-b437-3ff4a8f23ac6",
+        "name": "Reject Without Context"
       }
     ],
     "connections": {
@@ -108,7 +188,36 @@
         "main": [
           [
             {
+              "node": "Relevant Context Found?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Relevant Context Found?": {
+        "main": [
+          [
+            {
               "node": "Answer From Retrieved Context",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Reject Without Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Answer From Retrieved Context": {
+        "main": [
+          [
+            {
+              "node": "Append Verified Citations",
               "type": "main",
               "index": 0
             }

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.3"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run unit tests
+        run: uv run pytest -q
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config -q

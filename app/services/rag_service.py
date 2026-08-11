@@ -1,5 +1,6 @@
 """Orchestrate document ingestion and semantic retrieval."""
 
+import re
 from typing import BinaryIO
 
 from app.schemas.document import DocumentIndexResult
@@ -56,6 +57,7 @@ class RetrievalService:
         embedding_service: EmbeddingService,
         vector_store: QdrantVectorStore,
         default_top_k: int = 4,
+        min_relevance_score: float = 0.42,
     ) -> None:
         if default_top_k <= 0:
             raise ValueError("default_top_k must be greater than 0")
@@ -63,6 +65,7 @@ class RetrievalService:
         self._embedding_service = embedding_service
         self._vector_store = vector_store
         self._default_top_k = default_top_k
+        self._min_relevance_score = min_relevance_score
 
     def search(
         self,
@@ -80,4 +83,19 @@ class RetrievalService:
             raise ValueError("top_k must be greater than 0")
 
         query_vector = self._embedding_service.embed_query(clean_query)
-        return self._vector_store.search(query_vector, result_limit)
+        return self._vector_store.search(
+            query_vector,
+            result_limit,
+            score_threshold=self._min_relevance_score,
+            source_filter=extract_requested_pdf(clean_query),
+        )
+
+
+_PDF_FILENAME_PATTERN = re.compile(r"(?i)(?<![\w.-])([\w][\w.-]*\.pdf)\b")
+
+
+def extract_requested_pdf(query: str) -> str | None:
+    """Return an explicitly mentioned PDF filename, if the query contains one."""
+
+    match = _PDF_FILENAME_PATTERN.search(query)
+    return match.group(1) if match else None

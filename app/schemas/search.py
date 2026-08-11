@@ -1,5 +1,7 @@
 """Request and response models for semantic document retrieval."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -33,4 +35,11 @@ class SearchResponse(BaseModel):
     """Ranked document context returned to the n8n search tool."""
 
     query: str
+    answerable: bool
+    reason: Literal[
+        "context_found",
+        "no_relevant_context",
+        "requested_source_not_found_or_irrelevant",
+    ]
+    requested_source: str | None = None
     results: list[SearchResult]

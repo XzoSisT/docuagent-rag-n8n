@@ -117,6 +117,8 @@ class QdrantVectorStore:
         self,
         query_vector: Sequence[float],
         top_k: int,
+        score_threshold: float | None = None,
+        source_filter: str | None = None,
     ) -> list[SearchResult]:
         """Return the nearest document chunks ordered by cosine similarity."""
 
@@ -136,6 +138,19 @@ class QdrantVectorStore:
                 collection_name=self.collection_name,
                 query=vector,
                 limit=top_k,
+                query_filter=(
+                    models.Filter(
+                        must=[
+                            models.FieldCondition(
+                                key="source",
+                                match=models.MatchValue(value=source_filter),
+                            )
+                        ]
+                    )
+                    if source_filter
+                    else None
+                ),
+                score_threshold=score_threshold,
                 with_payload=True,
                 with_vectors=False,
             )

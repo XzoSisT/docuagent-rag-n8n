@@ -5,19 +5,20 @@ Answer the user's question using ONLY the retrieved document context below.
 User question:
 {{ $json.query }}
 
+Required response language:
+{{ /[ก-๙]/.test($json.query) ? 'Thai' : 'English' }}
+
 Retrieved document context:
 {{ $json.results.map((result, index) =>
 `[${index + 1}]
-Source: ${result.source}
-Page: ${result.page}
 Content:
 ${result.text.slice(0, 900)}`
 ).join('\n\n') }}
 
 Instructions:
-- Use only information found in the retrieved context.
-- Include source filenames and page numbers.
-- Do not invent information, filenames, URLs, or page numbers.
-- If the context does not contain enough information, clearly say that the answer could not be found in the indexed documents.
-- Answer in the same language as the user's question.
-- Keep the answer concise: no more than 5 bullet points or 250 words.
+- Use only information explicitly supported by the retrieved context.
+- Answer in the required response language shown above.
+- Do not infer policies, facts, filenames, URLs, or page numbers.
+- Do not write a Sources or References section; the workflow appends verified citations.
+- Start directly with the answer.
+- Keep the answer concise: at most 3 bullet points or 180 words.
