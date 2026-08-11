@@ -380,6 +380,10 @@ Possible Version 2 improvements:
 
 This Compose setup is intended for local development and learning. The API has no authentication, and the local Qdrant instance has no API key by default. Do not expose either service publicly without adding authentication, TLS, and network controls.
 
+## License
+
+This project is released under the [MIT License](LICENSE).
+
 ## Reference documentation
 
 - [uv in Docker](https://docs.astral.sh/uv/guides/integration/docker/)
